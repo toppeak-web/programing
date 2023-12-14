@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>영어 단어 퀴즈</title>
+</head>
+<body>
+  <h1>영어 단어 퀴즈</h1>
+  <label for="start">시작 숫자를 입력하세요:</label>
+  <input type="number" id="start" min="1"><br><br>
+  <label for="end">끝 숫자를 입력하세요:</label>
+  <input type="number" id="end" min="1"><br><br>
+  <button onclick="startQuiz()">시작하기</button><br><br>
+  <p id="question"></p>
+  <input type="text" id="answer" placeholder="정답을 입력하세요"><br><br>
+  <button onclick="checkAnswer()">정답 확인</button><br><br>
+  <button onclick="showMistakes()">오답 노트 보기</button>
+
+  <script>
+    fetch('output.json')
+  .then(response => response.json())
+  .then(data => {
+    const wordList = data; // JSON 파일 데이터를 변수에 할당
+    console.log(wordList); // 불러온 JSON 데이터 확인용
+  })
+  .catch(error => console.error('데이터를 불러오지 못했습니다.', error));
+
+    
+    let mistakeList = [];
+
+    let currentQuestion;
+    let questionStack;
+
+    function startQuiz() {
+      const start = parseInt(document.getElementById("start").value);
+      const end = parseInt(document.getElementById("end").value);
+      questionStack = shuffle(wordList.slice(start - 1, end));
+      askQuestion();
+    }
+
+    function askQuestion() {
+      if (questionStack.length > 0) {
+        currentQuestion = questionStack.pop();
+        document.getElementById("question").innerHTML = `Question: ${currentQuestion['예문']}`;
+      } else {
+        alert("퀴즈가 종료되었습니다.");
+        localStorage.setItem('mistakes', JSON.stringify(mistakeList));
+      }
+    }
+
+    function checkAnswer() {
+      const userInput = document.getElementById("answer").value.toLowerCase();
+      const correctAnswer = currentQuestion['의미'].toLowerCase();
+
+      if (userInput === correctAnswer) {
+        alert("정답입니다!");
+        askQuestion();
+      } else {
+        alert(`틀렸습니다! 정답은 ${currentQuestion['의미']}입니다.`);
+        saveMistake();
+        askQuestion();
+      }
+    }
+
+    function saveMistake() {
+      mistakeList.push(currentQuestion);
+    }
+
+    function showMistakes() {
+      const mistakes = JSON.parse(localStorage.getItem('mistakes'));
+      if (mistakes && mistakes.length > 0) {
+        alert(mistakes.map(item => `예문: ${item['예문']}\n정답: ${item['의미']}`).join("\n\n"));
+      } else {
+        alert("오답이 없습니다.");
+      }
+    }
+
+    function shuffle(array) {
+      let currentIndex = array.length, randomIndex;
+      while (currentIndex !== 0) {
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+        [array[currentIndex], array[randomIndex]] = [
+          array[randomIndex], array[currentIndex]];
+      }
+      return array;
+    }
+  </script>
+</body>
+</html>
